@@ -1,4 +1,4 @@
-### Project Collector (VI)
+### Collector 
 A full-stack web application made for the course Artificial Intelligence for collecting and analyzing data, built with a modern Python backend and containerized for easy deployment and development.
 
 Backend: FastAPI
