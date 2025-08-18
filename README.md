@@ -9,7 +9,7 @@ Database: PostgreSQL
 
 Containerized: Using Docker and Docker Compose
 
-Quick Setup
+Quick Setup:
 1. Clone this repository
 
     git clone https://github.com/andrejwastaken/collector.git
@@ -33,8 +33,7 @@ Quick Setup
    
     cp .env.example .env
 
-Now, edit the .env file with your desired database credentials:
-
+   Now, edit the .env file with your desired database credentials
 
 
 3. Build and run the project using Docker Compose
@@ -60,7 +59,8 @@ This command will build the Docker images and start all services. Make sure you 
 
     docker compose exec backend python scripts/seed.py
 
-Notes
+Note:
+
 Anytime you change your SQLAlchemy models in backend/app/models.py, you must generate a new migration (Step 4.1) and apply it (Step 4.2).
 
 If you run into any issues, feel free to open an issue.
