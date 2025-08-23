@@ -18,8 +18,7 @@ venv/
 data/
 chroma_db/
 postgres_data/
-roadmap.txt
-tips.txt
+stuff/
 
 # Docker
 docker-compose.override.yml
