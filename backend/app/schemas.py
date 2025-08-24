@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from decimal import Decimal
 
 class CarOut(BaseModel):
     id: int
@@ -10,7 +11,7 @@ class CarOut(BaseModel):
     model: str | None
     city: str | None
     municipality: str | None
-    price_num: float | None
+    price_num: Decimal | None
     year: int | None
     mileage_km: int | None
     date_posted: datetime | None

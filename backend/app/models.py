@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Numeric, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
 
@@ -15,7 +15,7 @@ class Car(Base):
     model = Column(String(100))
     city = Column(String(100))
     municipality = Column(String(100))
-    price_num = Column(Float, nullable=True)
+    price_num = Column(Numeric(10, 2), nullable=True)
     year = Column(Integer, nullable=True)
     mileage_km = Column(Integer, nullable=True)
     date_posted = Column(DateTime, nullable=True)

@@ -43,7 +43,6 @@ def scrape_cars(max_pages=MAX_PAGES, crawl_delay=CRAWL_DELAY):
             # Extract price
             price = row.find('p', class_='list-price')
             car["price"] = price.text.strip().replace("ЕУР", "EUR").replace("МКД", "MKD") if price else None
-
             # Extract year and mileage
             divs = row.find('div', class_='left-side').find_all('div')
             year, mileage = None, None
@@ -101,7 +100,7 @@ def scrape_cars(max_pages=MAX_PAGES, crawl_delay=CRAWL_DELAY):
             cars.append(car)
         page += 1
         print(f"Waiting {crawl_delay} seconds to be polite...")
-        if page > 2:
+        if page > MAX_PAGES:
             print(f"Reached MAX_PAGES ({max_pages}). Stopping.")
             break
         time.sleep(crawl_delay)
@@ -116,7 +115,7 @@ def scrape_cars(max_pages=MAX_PAGES, crawl_delay=CRAWL_DELAY):
     df_combined = pd.concat([df_existing, df_new], ignore_index=True)
     df_combined['scraped_at'] = pd.to_datetime(df_combined['scraped_at'], errors='coerce')
     df_combined.sort_values('scraped_at', ascending=False, inplace=True)
-    df_cleaned = df_combined.drop_duplicates(subset='url', keep='first')
+    df_cleaned = df_combined.drop_duplicates(subset=['title', 'year', 'mileage'], keep='first')
     df_cleaned.to_csv('data/raw/cars.csv', index=False, encoding='utf-8-sig')
 
     with open('data/raw/cars.json', 'w', encoding='utf-8') as f:

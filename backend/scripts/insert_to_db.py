@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from app.db.session import SessionLocal  
 from app.models import Car   
 import numpy as np 
@@ -8,35 +9,44 @@ def insert_cleaned_to_db(df=None, csv_path=None):
     """
     Insert cleaned cars into the database.
     Either pass a DataFrame via `df` or a CSV path via `csv_path`.
+    Avoids duplicates based on title + mileage + year.
     """
     if df is None and csv_path is not None:
         df = pd.read_csv(csv_path, encoding='utf-8-sig', keep_default_na=False)
     elif df is None and csv_path is None:
         raise ValueError("You must provide either a DataFrame or a CSV path")
 
-    # Replace NaN with None for SQLAlchemy compatibility
+    # Replace NaNs with None for SQLAlchemy
     df = df.replace({np.nan: None})
     session = SessionLocal()
     cars_to_insert = []
+
     try:
-        # Pre-fetch all existing URLs to avoid duplicates
-        existing_urls = {url for (url,) in session.query(Car.url).all()}
+        # Pre-fetch existing cars as tuples of (title, mileage, year)
+        existing_cars = set(
+            session.query(Car.title, Car.mileage_km, Car.year).all()
+        )
 
         for _, row in df.iterrows():
-            # Check for pandas.Na and convert to None
-            year_value = row.get('year')
-            price_value = row.get('price')
-            mileage_value = row.get('mileage')
-            if pd.isna(year_value):
-                year_value = None
-            if pd.isna(price_value):
-                price_value = None
-            if pd.isna(mileage_value):
-                mileage_value = None
+            year_value = row.get('year') if pd.notna(row.get('year')) else None
+            mileage_value = row.get('mileage') if pd.notna(row.get('mileage')) else None
 
-            url_value = row.get('url', None)
-            if not url_value or url_value in existing_urls:
-                continue
+            price_raw = row.get('price')
+            price_value = None
+            if pd.notna(price_raw):
+                try:
+                    price_value = Decimal(str(price_raw)).quantize(Decimal("0.01"))
+                except (InvalidOperation, ValueError):
+                    price_value = None
+
+            car_key = (
+                row.get('title', None),
+                mileage_value,
+                year_value
+            )
+            if car_key in existing_cars:
+                continue  # skip duplicates
+
             car = Car(
                 image_url=row.get('image_url', None),
                 title=row.get('title', None),
@@ -52,6 +62,7 @@ def insert_cleaned_to_db(df=None, csv_path=None):
                 scraped_at=datetime.now(timezone.utc)
             )
             cars_to_insert.append(car)
+            existing_cars.add(car_key)  # add to set so subsequent rows also avoid duplicates
 
         session.bulk_save_objects(cars_to_insert)
         session.commit()

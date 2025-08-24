@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 
 # --- Helper functions ---
 def parse_price(price_str):
@@ -9,19 +10,22 @@ def parse_price(price_str):
 
     try:
         if "EUR" in price_str:
-            value = float(price_str.replace("EUR", ""))
-            return value
+            value = Decimal(price_str.replace("EUR", ""))
+            return value.quantize(Decimal("0.01"))
         elif "MKD" in price_str:
-            value = float(price_str.replace("MKD", ""))
-            eur_value = value / 61.5  # adjust if exchange rate changes
-            return round(eur_value, 2)
+            value = Decimal(price_str.replace("MKD", ""))
+            eur_value = value / Decimal("61.5")  # adjust if exchange rate changes
+            return eur_value.quantize(Decimal("0.01"))
         else:
             # handle weird listings like "1" or unknown formats
-            value = float(''.join(filter(str.isdigit, price_str)))
+            value_str = ''.join(filter(str.isdigit, price_str))
+            if not value_str:
+                return None
+            value = Decimal(value_str)
             if value > 1000:  # assume MKD if big number
-                return round(value / 61.5, 2)
-            return value
-    except ValueError:
+                return (value / Decimal("61.5")).quantize(Decimal("0.01"))
+            return value.quantize(Decimal("0.01"))
+    except (InvalidOperation, ValueError):
         return None
 
 MONTHS = {
@@ -76,7 +80,6 @@ def clean_data(df: pd.DataFrame,
 
     # Parse numeric/date fields
     df_cleaned['price'] = df_cleaned['price'].apply(parse_price)
-    df_cleaned['price'] = df_cleaned['price'].astype(object)
     df_cleaned['mileage'] = pd.to_numeric(df_cleaned['mileage'], errors='coerce').astype('Int64')
     df_cleaned['year'] = df_cleaned['year'].astype('Int64')
     df_cleaned['date'] = df_cleaned['date'].apply(parse_date)
