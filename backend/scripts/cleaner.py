@@ -25,24 +25,24 @@ def parse_price(price_str):
     except ValueError:
         return None
 
-def parse_year(year_str):
-    try:
-        year = int(year_str)
-        if 1900 <= year <= 2030:
-            return year
-        return None
-    except (ValueError, TypeError):
-        return None
-
 def parse_mileage(mileage_str):
     if not isinstance(mileage_str, str):
         return None
-    mileage_clean = ''.join(filter(str.isdigit, mileage_str))
-    if not mileage_clean:
+
+    parts = mileage_str.replace(' ', '').split('-')
+    if len(parts) != 2:
         return None
-    mileage = int(mileage_clean)
-    if 0 <= mileage <= 249999:
-        return mileage
+
+    try:
+        start = int(parts[0])
+        end = int(parts[1])
+    except ValueError:
+        return None
+
+    mileage_avg = (start + end) // 2
+
+    if mileage_avg >= 0:
+        return mileage_avg
     return None
 
 MONTHS = {
@@ -80,11 +80,10 @@ def parse_date(date_str):
     return None
 
 # --- Main cleaning function ---
-def clean_data(input_csv='data/raw/cars.csv',
+def clean_data(df: pd.DataFrame,
                output_csv='data/cleaned/cars_cleaned.csv',
-               output_json='data/cleaned/cars_cleaned.json'):
+               output_json='data/cleaned/cars_cleaned.json') -> pd.DataFrame:
 
-    df = pd.read_csv(input_csv, encoding='utf-8-sig')
     df_cleaned = df.copy()
 
     # Fill missing strings
@@ -97,13 +96,14 @@ def clean_data(input_csv='data/raw/cars.csv',
     df_cleaned['municipality'] = df_cleaned['municipality'].fillna('no_municipality')
 
     # Parse numeric/date fields
-    df_cleaned['price'] = df_cleaned['price'].fillna('check_listing').apply(parse_price)
-    df_cleaned['year'] = df_cleaned['year'].fillna('no_year').apply(parse_year)
-    df_cleaned['mileage'] = df_cleaned['mileage'].fillna('no_mileage').apply(parse_mileage)
-    df_cleaned['date'] = df_cleaned['date'].fillna('no_date').apply(parse_date)
+    df_cleaned['price'] = df_cleaned['price'].apply(parse_price)
+    df_cleaned['year'] = df_cleaned['year'].astype('Int64')
+    df_cleaned['mileage'] = df_cleaned['mileage'].apply(parse_mileage)
+    df_cleaned['date'] = df_cleaned['date'].apply(parse_date)
 
     # Save cleaned data
     df_cleaned.to_csv(output_csv, index=False, encoding='utf-8-sig')
     df_cleaned.to_json(output_json, orient='records', force_ascii=False, indent=4)
 
     print("Data cleaned and saved to CSV and JSON.")
+    return df_cleaned
