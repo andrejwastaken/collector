@@ -12,7 +12,7 @@ class CarOut(BaseModel):
     municipality: str | None
     price_num: float | None
     year: int | None
-    mileage_km: float | None
+    mileage_km: int | None
     date_posted: datetime | None
     scraped_at: datetime | None
     

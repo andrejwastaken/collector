@@ -2,18 +2,20 @@ import pandas as pd
 from datetime import datetime, timezone
 from app.db.session import SessionLocal  
 from app.models import Car   
+import numpy as np 
 
 def insert_cleaned_to_db(df=None, csv_path=None):
     """
     Insert cleaned cars into the database.
     Either pass a DataFrame via `df` or a CSV path via `csv_path`.
     """
-    print(1)
     if df is None and csv_path is not None:
-        df = pd.read_csv(csv_path, encoding='utf-8-sig')
+        df = pd.read_csv(csv_path, encoding='utf-8-sig', keep_default_na=False)
     elif df is None and csv_path is None:
         raise ValueError("You must provide either a DataFrame or a CSV path")
 
+    # Replace NaN with None for SQLAlchemy compatibility
+    df = df.replace({np.nan: None})
     session = SessionLocal()
     cars_to_insert = []
     try:
@@ -21,10 +23,17 @@ def insert_cleaned_to_db(df=None, csv_path=None):
         existing_urls = {url for (url,) in session.query(Car.url).all()}
 
         for _, row in df.iterrows():
-            # Check for pandas.NA and convert to None
-            year_value = row.get('year', None)
+            # Check for pandas.Na and convert to None
+            year_value = row.get('year')
+            price_value = row.get('price')
+            mileage_value = row.get('mileage')
             if pd.isna(year_value):
                 year_value = None
+            if pd.isna(price_value):
+                price_value = None
+            if pd.isna(mileage_value):
+                mileage_value = None
+
             url_value = row.get('url', None)
             if not url_value or url_value in existing_urls:
                 continue
@@ -32,9 +41,9 @@ def insert_cleaned_to_db(df=None, csv_path=None):
                 image_url=row.get('image_url', None),
                 title=row.get('title', None),
                 url=row.get('url', None),
-                price_num=row.get('price', None),
+                price_num=price_value,
                 year=year_value,
-                mileage_km=row.get('mileage', None),
+                mileage_km=mileage_value,
                 date_posted=pd.to_datetime(row.get('date'), errors='coerce'),
                 make=row.get('make', None),
                 model=row.get('model', None),

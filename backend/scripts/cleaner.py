@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 def parse_price(price_str):
     if not price_str or not isinstance(price_str, str):
         return None
-
     price_str = price_str.replace(" ", "").upper()
 
     try:
@@ -24,26 +23,6 @@ def parse_price(price_str):
             return value
     except ValueError:
         return None
-
-def parse_mileage(mileage_str):
-    if not isinstance(mileage_str, str):
-        return None
-
-    parts = mileage_str.replace(' ', '').split('-')
-    if len(parts) != 2:
-        return None
-
-    try:
-        start = int(parts[0])
-        end = int(parts[1])
-    except ValueError:
-        return None
-
-    mileage_avg = (start + end) // 2
-
-    if mileage_avg >= 0:
-        return mileage_avg
-    return None
 
 MONTHS = {
     'јан.': 1, 'фев.': 2, 'мар.': 3, 'апр.': 4, 'мај.': 5, 'јун.': 6,
@@ -97,8 +76,9 @@ def clean_data(df: pd.DataFrame,
 
     # Parse numeric/date fields
     df_cleaned['price'] = df_cleaned['price'].apply(parse_price)
+    df_cleaned['price'] = df_cleaned['price'].astype(object)
+    df_cleaned['mileage'] = pd.to_numeric(df_cleaned['mileage'], errors='coerce').astype('Int64')
     df_cleaned['year'] = df_cleaned['year'].astype('Int64')
-    df_cleaned['mileage'] = df_cleaned['mileage'].apply(parse_mileage)
     df_cleaned['date'] = df_cleaned['date'].apply(parse_date)
 
     # Save cleaned data

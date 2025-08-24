@@ -60,7 +60,18 @@ def scrape_cars(max_pages=MAX_PAGES, crawl_delay=CRAWL_DELAY):
                     except (ValueError, TypeError):
                         year = None
                 elif 'Километража' in text:
-                    mileage = value
+                    if value and '-' in value:
+                        parts = value.split('-')
+                        try:
+                            numbers = [float(p.replace(" ", "").strip()) for p in parts]
+                            mileage = int(round(sum(numbers) / len(numbers)))
+                        except ValueError:
+                            mileage = None
+                    else:
+                        try:
+                            mileage = float(value)
+                        except ValueError:
+                            mileage = None
             car["year"] = year
             car["mileage"] = mileage
 
@@ -90,7 +101,7 @@ def scrape_cars(max_pages=MAX_PAGES, crawl_delay=CRAWL_DELAY):
             cars.append(car)
         page += 1
         print(f"Waiting {crawl_delay} seconds to be polite...")
-        if page > MAX_PAGES:
+        if page > 2:
             print(f"Reached MAX_PAGES ({max_pages}). Stopping.")
             break
         time.sleep(crawl_delay)

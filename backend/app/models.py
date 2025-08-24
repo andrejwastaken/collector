@@ -17,7 +17,7 @@ class Car(Base):
     municipality = Column(String(100))
     price_num = Column(Float, nullable=True)
     year = Column(Integer, nullable=True)
-    mileage_km = Column(Float, nullable=True)
+    mileage_km = Column(Integer, nullable=True)
     date_posted = Column(DateTime, nullable=True)
     scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
