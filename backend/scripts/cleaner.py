@@ -2,20 +2,23 @@ import pandas as pd
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
+MAX_DB_VALUE = Decimal("99999999.99")  # NUMERIC(10,2) max
+
 # --- Helper functions ---
 def parse_price(price_str):
     if not price_str or not isinstance(price_str, str):
         return None
+    
     price_str = price_str.replace(" ", "").upper()
 
     try:
         if "EUR" in price_str:
             value = Decimal(price_str.replace("EUR", ""))
-            return value.quantize(Decimal("0.01"))
+            value = value.quantize(Decimal("0.01"))
         elif "MKD" in price_str:
             value = Decimal(price_str.replace("MKD", ""))
             eur_value = value / Decimal("61.5")  # adjust if exchange rate changes
-            return eur_value.quantize(Decimal("0.01"))
+            value = eur_value.quantize(Decimal("0.01"))
         else:
             # handle weird listings like "1" or unknown formats
             value_str = ''.join(filter(str.isdigit, price_str))
@@ -23,13 +26,20 @@ def parse_price(price_str):
                 return None
             value = Decimal(value_str)
             if value > 1000:  # assume MKD if big number
-                return (value / Decimal("61.5")).quantize(Decimal("0.01"))
-            return value.quantize(Decimal("0.01"))
+                value = (value / Decimal("61.5")).quantize(Decimal("0.01"))
+            else:
+                value = value.quantize(Decimal("0.01"))
+
+        if value > MAX_DB_VALUE:
+            return None
+
+        return value
+
     except (InvalidOperation, ValueError):
         return None
 
 MONTHS = {
-    'јан.': 1, 'фев.': 2, 'мар.': 3, 'апр.': 4, 'мај.': 5, 'јун.': 6,
+    'јан.': 1, 'фев.': 2, 'мар.': 3, 'апр.': 4, 'мај': 5, 'јун.': 6,
     'јул.': 7, 'авг.': 8, 'сеп.': 9, 'окт.': 10, 'ноем.': 11, 'дек.': 12
 }
 
@@ -90,3 +100,19 @@ def clean_data(df: pd.DataFrame,
 
     print("Data cleaned and saved to CSV and JSON.")
     return df_cleaned
+
+if __name__ == "__main__":
+    import sys
+    import os
+    if len(sys.argv) < 2:
+        print("Usage: python clean_cars.py <raw_csv_file>")
+        sys.exit(1)
+
+    raw_csv = sys.argv[1]
+
+    if not os.path.exists(raw_csv):
+        print(f"File not found: {raw_csv}")
+        sys.exit(1)
+
+    df_raw = pd.read_csv(raw_csv, encoding='utf-8-sig')
+    clean_data(df_raw)
