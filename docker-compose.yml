@@ -32,6 +32,7 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/data:/app/data
+      - ./chroma_db:/app/chroma_db
     depends_on:
       db:
         condition: service_healthy
