@@ -32,7 +32,8 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/data:/app/data
-      - ./chroma_db:/app/chroma_db
+      - ./backend/chroma_db:/app/chroma_db
+      - ./backend/ollama_data:/root/.ollama
     depends_on:
       db:
         condition: service_healthy

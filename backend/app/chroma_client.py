@@ -11,5 +11,6 @@ collection = client.get_or_create_collection(
     metadata={"hnsw:space": "cosine"}
 )
 
-nums_docs = len(collection.get())
+docs = collection.get()
+nums_docs = len(docs['ids'])  # Count of documents
 print(f"Number of documents in ChromaDB: {nums_docs}")

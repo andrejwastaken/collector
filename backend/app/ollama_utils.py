@@ -2,9 +2,12 @@ from ollama import Client
 
 client = Client()
 
-def get_embedding(text: str) -> list[float]:
-    try:
-        response = client.embeddings(model="nomic-embed-text", prompt=text)
-        return response["embedding"]
-    except Exception as e:
-        raise RuntimeError(f"Embedding generation failed: {e}")
+def get_embedding(text: str, retries: int = 3) -> list[float]:
+    for attempt in range(retries):
+        try:
+            response = client.embeddings(model="nomic-embed-text", prompt=text)
+            return response["embedding"]
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed: {e}")
+    raise RuntimeError(f"Embedding generation failed after {retries} attempts.")
+

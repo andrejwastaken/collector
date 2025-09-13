@@ -4,7 +4,7 @@ from app.chroma_client import collection
 from app.ollama_utils import get_embedding
 import time
 
-BATCH_SIZE = 10  # process 500 cars at a time to save memory
+BATCH_SIZE = 20  # process 500 cars at a time to save memory
 
 def sanitize_metadata(metadata: dict):
     sanitized = {}
@@ -24,7 +24,7 @@ def sanitize_metadata(metadata: dict):
 def backfill_embeddings(db: Session):
     offset = 0
     while True:
-        if offset == 10:
+        if offset == 60:
             break
         cars = db.query(Car).offset(offset).limit(BATCH_SIZE).all()
         if not cars:
