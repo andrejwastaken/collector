@@ -29,6 +29,7 @@ services:
       APP_ENV: dev
     ports:
       - "8000:8000"
+      - "8501:8501"
     volumes:
       - ./backend:/app
       - ./backend/data:/app/data

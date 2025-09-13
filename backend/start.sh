@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# Start Ollama server in the background
 ollama serve &
 
-# Wait a few seconds for the server to be ready
 sleep 10
 
-# Pull the model
-ollama pull nomic-embed-text
+ollama pull bge-m3 && ollama pull llama3.2:1b
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
+
+streamlit run /app/frontend.py --server.port 8501 --server.address 0.0.0.0

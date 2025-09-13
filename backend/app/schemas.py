@@ -18,3 +18,28 @@ class CarOut(BaseModel):
     scraped_at: datetime | None
     
     model_config = ConfigDict(from_attributes=True)
+
+class RetrievedCar(BaseModel):
+    id: int
+    distance: float
+    metadata: dict
+    document: str
+
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = 10
+    
+class SearchResponse(BaseModel):
+    answer: str
+    retrieved_cars: list[RetrievedCar]
+    cars: list[CarOut]
+
+    model_config = {"from_attributes": True}
+    
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class MessageCreate(BaseModel):
+    user_id: int
+    message: str

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -21,3 +22,19 @@ class Car(Base):
     date_posted = Column(DateTime, nullable=True)
     scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+
+    chats = relationship("Chat", back_populates="owner")
+
+class Chat(Base):
+    __tablename__ = "chats"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    message = Column(Text)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    owner = relationship("User", back_populates="chats")

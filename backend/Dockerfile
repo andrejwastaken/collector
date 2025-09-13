@@ -19,6 +19,6 @@ RUN chmod +x ./start.sh
 
 EXPOSE 8000
 
-# Start Ollama server in the background, then start FastAPI
+# Start Ollama server in the background, then start FastAPI, then start the app
 CMD ["sh", "./start.sh"]
 
