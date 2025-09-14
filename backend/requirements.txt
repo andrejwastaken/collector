@@ -51,6 +51,7 @@ joblib==1.5.1
 jsonschema==4.25.0
 jsonschema-specifications==2025.4.1
 kubernetes==33.1.0
+langdetect==1.0.9
 llama-cloud==0.1.35
 llama-cloud-services==0.6.54
 llama-index==0.13.2

@@ -4,7 +4,7 @@ from app.chroma_client import collection
 from app.ollama_utils import get_embedding
 import time
 
-BATCH_SIZE = 20  # process 500 cars at a time to save memory
+BATCH_SIZE = 500  # process 500 cars at a time to save memory
 
 def sanitize_metadata(metadata: dict):
     sanitized = {}
@@ -24,8 +24,6 @@ def sanitize_metadata(metadata: dict):
 def backfill_embeddings(db: Session):
     offset = 0
     while True:
-        if offset == 60:
-            break
         cars = db.query(Car).offset(offset).limit(BATCH_SIZE).all()
         if not cars:
             break
@@ -46,8 +44,6 @@ def backfill_embeddings(db: Session):
 
             ids_to_add.append(str(car.id))
             embeddings_to_add.append(embedding)
-            print(f"Embedded car {car.id}")
-            print(embedding)
             # Sanitize the metadata dictionary for the current car
             car_metadata = {
                 "id": car.id,
@@ -58,12 +54,13 @@ def backfill_embeddings(db: Session):
                 "municipality": car.municipality,
                 "year": car.year,
                 "price_num": float(car.price_num) if car.price_num else None,
-                "mileage_km": car.mileage_km
+                "mileage_km": car.mileage_km,
+                "date_posted": car.date_posted.strftime("%d.%m.%Y") if car.date_posted else None,
+                "url": car.url,
+                "image_url": car.image_url
             }
             sanitized_car_metadata = sanitize_metadata(car_metadata)
-            print(sanitized_car_metadata)
             metadatas_to_add.append(sanitized_car_metadata)
-
             documents_to_add.append(text_to_embed)
 
         # Add batch to Chroma

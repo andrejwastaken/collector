@@ -1,66 +1,137 @@
-### Collector 
-A full-stack web application made for the course Artificial Intelligence for collecting and analyzing data, built with a modern Python backend and containerized for easy deployment and development.
+Collector 🚗
+============
 
-Backend: FastAPI
+An AI-powered search and analysis application for car data, built for the "Artificial Intelligence" course.
 
-Frontend: Streamlit
+Overview
+-----------
 
-Database: PostgreSQL
+Collector is a full-stack web application designed to demonstrate the principles of data collection and analysis using AI. This project uses a modern Python stack, containerized with Docker for easy setup and deployment. The core functionality is built around a Retrieval-Augmented Generation (RAG) pipeline: user queries are converted into vector embeddings to find relevant car data from a ChromaDB vector store, and the results are passed to an Ollama-hosted LLM to generate a natural language response.
 
-Containerized: Using Docker and Docker Compose
+Features
+----------
 
-Quick Setup:
-1. Clone this repository
+*   **Semantic Search**: Ask questions in natural language (e.g., "What are the cheapest cars in Skopje?") to find relevant information.
+    
+*   **Interactive Frontend**: A simple and clean user interface built with Streamlit.
+    
+*   **Robust Backend**: A scalable and documented API powered by FastAPI.
+    
+*   **Persistent Data Storage**: Uses PostgreSQL for structured data and ChromaDB for vector embeddings.
+    
+*   **Containerized Environment**: Fully self-contained with Docker and Docker Compose for a one-command setup.
+    
+*   **Database Migrations**: Schema changes are managed gracefully with Alembic.
+    
 
-    git clone https://github.com/andrejwastaken/collector.git
+Tech Stack
+--------------
 
-    cd collector
-
-2. Set up environment variables
-
-    Create a .env file in the project root by copying the template.
-    This file manages all your secrets and configurations.
-    ## .env
-    POSTGRES_DB=X
-
-    POSTGRES_USER=X
-
-    POSTGRES_PASSWORD=X
-
-    POSTGRES_HOST=db
-
-    POSTGRES_PORT=5432
-   
-    cp .env.example .env
-
-   Now, edit the .env file with your desired database credentials
+| Component       | Technology |
+|-----------------|------------|
+| **Backend**     | [FastAPI](https://fastapi.tiangolo.com/), [Python 3.12](https://www.python.org/) |
+| **Frontend**    | [Streamlit](https://streamlit.io/) |
+| **Database**    | [PostgreSQL](https://www.postgresql.org/) |
+| **Vector Store**| [ChromaDB](https://www.trychroma.com/) |
+| **LLM/Embeddings** | [Ollama](https://ollama.com/) |
+| **Containerization** | [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) |
+| **Migrations**  | [Alembic](https://alembic.sqlalchemy.org/) |
 
 
-3. Build and run the project using Docker Compose
-This command will build the Docker images and start all services. Make sure you have Docker and Docker Compose installed on your system.
+Getting Started
+------------------
 
-    docker compose up --build -d
+Follow these steps to get the project up and running on your local machine.
 
-    The backend of the application will be available at http://localhost:8000, and the interactive API documentation will be at http://localhost:8000/docs.
+### Prerequisites
 
-4. Apply database migrations
-    Run the following commands to create the database tables based on your SQLAlchemy models.
+Before you begin, ensure you have the following installed and running on your host machine:
 
-    Generate the initial migration script (only needed the first time):
+*   [**Docker**](https://docs.docker.com/get-docker/) **&** [**Docker Compose**](https://docs.docker.com/compose/install/): For running the containerized services.
+    
+*   [**Ollama**](https://ollama.com/): This project requires Ollama for serving the LLM and embedding models locally.
+    
+    *   ollama is configured to pull the necesary models in start.sh.
+        
+    *   **Important**: Ensure the Ollama desktop application or background service is running before you proceed to the next steps.
+        
 
-    docker compose exec backend alembic revision --autogenerate -m "Initial database schema"
+### 1\. Scrape Data for PostgreSQL
 
-    Apply the migrations to the database:
+The application requires a dataset to function. You must first run the scraping scripts (located in backend/scripts) to generate the data (e.g., into a .csv file) that will be loaded into the PostgreSQL database. For ease of use, running the cars_etl script is prefered as it does the whole process automatically (scrape -> clean -> insert into database), but for that you will need to have completed step 5 (initialized Postgres). 
 
-    docker compose exec backend alembic upgrade head
+_(Note: This is a manual step. You need to execute your data scraping process first and place the output where the application can find it.)_
 
-5. Populate the database (Optional)
-    If you have a seeding script to load initial data into the database (e.g., in scripts/seed.py), run it with the following command:
+### 2\. Clone the Repository
+```bash
+git clone [https://github.com/andrejwastaken/collector.git](https://github.com/andrejwastaken/collector.git)
+cd collector
+```
 
-    docker compose exec backend python scripts/seed.py
+### 3\. Configure Environment Variables
 
-Note:
+Create a .env file from the following example template. This file will hold your database credentials. 
+```
+# .env.example
+POSTGRES_DB=
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_HOST=
+POSTGRES_PORT=5432
+```
+```
+cp .env.example .env   `
+```
+Now, open the newly created .env file and customize the variables (according to docker compose) if needed. 
 
-Anytime you change your SQLAlchemy models in backend/app/models.py, you must generate a new migration (Step 4.1) and apply it (Step 4.2).
+### 4\. Build and Run with Docker Compose
 
-If you run into any issues, feel free to open an issue.
+This single command will build the Docker images, create the necessary containers, and start all services in detached mode (-d).
+
+```
+docker compose up --build -d   `
+```
+
+### 5\. Apply Database Migrations
+
+Once the containers are running, you need to create the database tables using Alembic.
+
+First, **generate an initial migration script** (you only need to do this the very first time):
+
+```
+docker compose exec backend alembic revision --autogenerate -m "Initial database schema"   `
+```
+
+Next, **apply the migration** to the database to create the tables:
+
+```
+docker compose exec backend alembic upgrade head   `
+```
+
+> **Note**: Anytime you change your SQLAlchemy models in backend/app/models.py, you must generate and apply a new migration to update the database schema.
+
+### 6\. Populate Databases (PostgreSQL & ChromaDB)
+
+For Postgres, if you have already ran the scrape and clean scripts, you can now run insert_to_db or run the cars_etl script as mentioned in step 1. 
+```
+docker compose exec backend python app/scripts/cars_etl.py
+```
+
+To populate the ChromaDB vector store with embeddings for semantic search, run the following script. The vector database is configured to store the embeddings locally.
+
+Run the backfill script inside the running backend container to embed your data from Postgres into ChromaDB:
+
+```  
+docker compose exec backend python -m app/backfill_runner`
+```
+
+This script will read the stored data you scraped in Step 1 and populate ChromaDB with the necessary embeddings.
+
+Usage
+---------
+
+Once all the services are running and the databases are populated, you can access the application:
+
+*   **Frontend Application**: Open your browser and go to http://localhost:8501
+    
+*   **Backend API Docs**: The interactive Swagger/OpenAPI docs are available at http://localhost:8000/docs

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Optional
+from pydantic import BaseModel
 from datetime import datetime
 from decimal import Decimal
 
@@ -17,22 +18,21 @@ class CarOut(BaseModel):
     date_posted: datetime | None
     scraped_at: datetime | None
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = {"from_attributes": True}
 
 class RetrievedCar(BaseModel):
     id: int
     distance: float
     metadata: dict
-    document: str
 
 class SearchRequest(BaseModel):
     query: str
     top_k: int = 10
+    user_id: Optional[int] = None
     
 class SearchResponse(BaseModel):
     answer: str
     retrieved_cars: list[RetrievedCar]
-    cars: list[CarOut]
 
     model_config = {"from_attributes": True}
     
@@ -40,6 +40,7 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
-class MessageCreate(BaseModel):
+class ChatCreate(BaseModel):
     user_id: int
-    message: str
+    message: str = ""
+    title: Optional[str] = None
