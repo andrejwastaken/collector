@@ -10,7 +10,7 @@ def sanitize_metadata(metadata: dict):
     sanitized = {}
     for k, v in metadata.items():
         if v is None:
-            if k in ["title", "make", "model", "city", "municipality"]:
+            if k in ["title", "make", "model", "city", "municipality", "image_url"]:
                 sanitized[k] = ""
             elif k in ["year", "price_num", "mileage_km"]:
                 sanitized[k] = 0

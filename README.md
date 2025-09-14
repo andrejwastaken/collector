@@ -114,7 +114,7 @@ docker compose exec backend alembic upgrade head   `
 
 For Postgres, if you have already ran the scrape and clean scripts, you can now run insert_to_db or run the cars_etl script as mentioned in step 1. 
 ```
-docker compose exec backend python app/scripts/cars_etl.py
+docker compose exec backend python -m scripts.cars_etl  
 ```
 
 To populate the ChromaDB vector store with embeddings for semantic search, run the following script. The vector database is configured to store the embeddings locally.

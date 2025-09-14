@@ -24,24 +24,6 @@ app.add_middleware(
 
 ollama_client = Ollama()
 
-def is_english(text: str) -> bool:
-    try:
-        lang = detect(text)
-        return lang == "en"
-    except LangDetectException:
-        # Fallback: assume not English (so it will be translated)
-        return False
-    
-def translate_to_english(text: str) -> str:
-    prompt = f"Translate the following text to English:\n\n{text}"
-    resp = ollama_client.generate(model="llama3.2:1b", prompt=prompt, stream=False)
-    return resp["response"].strip()
-
-def translate_from_english(text: str, target_language: str = "Macedonian") -> str:
-    prompt = f"Translate the following English text to {target_language}:\n\n{text}"
-    resp = ollama_client.generate(model="llama3.2:1b", prompt=prompt, stream=False)
-    return resp["response"].strip()
-
 def get_db():
     db = SessionLocal()
     try:
@@ -115,13 +97,8 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
     user_query = req.query
     top_k = req.top_k
 
-    english_query = user_query
-    translate_answer = False
-    if not is_english(user_query):
-        english_query = translate_to_english(user_query)  # Only translate if not English
-        translate_answer = True
-
-    embed_resp = ollama_client.embed(model="bge-m3", input=english_query)
+    query_text = user_query
+    embed_resp = ollama_client.embed(model="bge-m3", input=query_text)
     query_emb = embed_resp.embeddings[0]
 
     results = collection.query(
@@ -137,7 +114,6 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
     items = sorted(zip(ids, distances, metadatas), key=lambda x: x[1])
     sorted_items = items[:top_k]
     sorted_ids = [int(item[0]) for item in sorted_items]
-
     order_case = case({id_: idx for idx, id_ in enumerate(sorted_ids)}, value=Car.id)
     # cars = db.query(Car).filter(Car.id.in_(sorted_ids)).order_by(order_case).all()
 
@@ -151,16 +127,14 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
 
     # LLM prompt always in English
     prompt = (
-        f"The user asked: '{english_query}'\n"
+        f"The user asked: '{query_text}'\n"
         f"These are the cars we found (use only this data, do NOT make up prices or mileage):\n"
         f"{structured_listings}\n"
         f"Answer concisely in English. Provide a short summary of the best car + the top {top_k} cars with name (link), image (link), price, mileage, and date posted."
     )
 
     response = ollama_client.generate(model="llama3.2:1b", prompt=prompt, stream=False)
-    answer_en = response["response"].strip()
-
-    answer_final = translate_from_english(answer_en, target_language="Macedonian") if translate_answer else answer_en
+    answer_final = response["response"].strip()
 
     if req.user_id:
         title = req.query[:50]
@@ -189,3 +163,4 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
         answer=answer_final,
         retrieved_cars=retrieved_listings,
     )
+
