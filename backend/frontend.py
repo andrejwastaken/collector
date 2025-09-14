@@ -1,7 +1,8 @@
-from langdetect import detect
+from langdetect import detect, DetectorFactory
 import streamlit as st
 import requests
 import pandas as pd
+DetectorFactory.seed = 0 
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -15,6 +16,7 @@ for key, default in {
     "auth_mode": "login",
     "sending": False,
     "search_text": "",
+    "query_lang": "en",
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -56,19 +58,20 @@ def handle_send(search_text):
         return
     st.session_state.sending = True
     try:
-        lang = detect(search_text)
-        if lang not in ["en", "mk"]:
-            lang = "mk" # Default to Macedonian if undetected
-        st.session_state.query_lang = lang
-        user_id = st.session_state.user["id"] if st.session_state.user else None
-        payload = {"query": search_text, "top_k": 10, "user_id": user_id}
-        res = requests.post(f"{API_URL}/search", json=payload)
-        if res.status_code == 200:
-            data = res.json()
-            st.session_state.search_answer = data["answer"]
-            st.session_state.search_results = data["retrieved_cars"]
-        else:
-            st.error(f"Search failed ({res.status_code})")
+        with st.spinner("Searching... please wait"):
+            lang = detect(search_text)
+            if lang not in ["en", "mk"]:
+                lang = "mk"  # Default to Macedonian if undetected
+            st.session_state.query_lang = lang
+            user_id = st.session_state.user["id"] if st.session_state.user else None
+            payload = {"query": search_text, "top_k": 10, "user_id": user_id}
+            res = requests.post(f"{API_URL}/search", json=payload)
+            if res.status_code == 200:
+                data = res.json()
+                st.session_state.search_answer = data["answer"]
+                st.session_state.search_results = data["retrieved_cars"]
+            else:
+                st.error(f"Search failed ({res.status_code})")
     except requests.exceptions.RequestException:
         st.error("Failed to connect to API")
     finally:
@@ -155,8 +158,10 @@ if st.session_state.search_results:
         else:
             st.write(f"**Price:** {meta.get('price','N/A')} € | **Mileage:** {meta.get('mileage','N/A')} km | **Date Posted:** {meta.get('date_posted','N/A')}")
 
-        if meta.get("image_url"):
-            st.image(meta["image_url"], width=300)
+        image_url = meta.get("image_url")
+        if image_url and image_url != "no_image":
+            st.image(image_url, width=300)
+
 
         st.markdown("---")
 

@@ -9,8 +9,6 @@ from app.schemas import CarOut, SearchResponse, RetrievedCar, UserCreate, ChatCr
 from app.auth import hash_password, verify_password
 from .embeddings import collection
 from ollama import Client as Ollama
-from langdetect import detect, LangDetectException, DetectorFactory
-DetectorFactory.seed = 0  # For consistent language detection results
 
 app = FastAPI(title="Collector API", version="1.0.0")
 
@@ -120,7 +118,7 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
     structured_listings = "\n".join(
         f"{i+1}. {item[2].get('title','N/A')} | {item[2].get('price_num','N/A')} € | "
         f"{item[2].get('mileage_km','N/A')} km | "
-        f"{item[2].get('date_posted').strftime('%d.%m.%Y') if item[2].get('date_posted') else 'N/A'} | "
+        f"{item[2].get('date_posted', 'N/A')} | "
         f"{item[2].get('url','')}"
         for i, item in enumerate(sorted_items)
     )
@@ -130,7 +128,7 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
         f"The user asked: '{query_text}'\n"
         f"These are the cars we found (use only this data, do NOT make up prices or mileage):\n"
         f"{structured_listings}\n"
-        f"Answer concisely in English. Provide a short summary of the best car + the top {top_k} cars with name (link), image (link), price, mileage, and date posted."
+        f"Answer concisely in English. Provide a short summary of the best car."
     )
 
     response = ollama_client.generate(model="llama3.2:1b", prompt=prompt, stream=False)
@@ -152,7 +150,7 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
                 "url": item[2].get("url"),
                 "price": item[2].get("price_num"),
                 "mileage": item[2].get("mileage_km"),
-                "date_posted": item[2].get("date_posted").strftime("%d.%m.%Y") if item[2].get("date_posted") else None,
+                "date_posted": item[2].get("date_posted") if item[2].get("date_posted") else None,
                 "image_url": item[2].get("image_url"),
             },
         )
