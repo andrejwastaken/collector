@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import case
+# from sqlalchemy import case
 from sqlalchemy.orm import Session
 from fastapi import HTTPException as HttpException
 from app.db.session import SessionLocal
@@ -112,7 +112,7 @@ def semantic_search(req: SearchRequest, db: Session = Depends(get_db)):
     items = sorted(zip(ids, distances, metadatas), key=lambda x: x[1])
     sorted_items = items[:top_k]
     sorted_ids = [int(item[0]) for item in sorted_items]
-    order_case = case({id_: idx for idx, id_ in enumerate(sorted_ids)}, value=Car.id)
+    # order_case = case({id_: idx for idx, id_ in enumerate(sorted_ids)}, value=Car.id)
     # cars = db.query(Car).filter(Car.id.in_(sorted_ids)).order_by(order_case).all()
 
     structured_listings = "\n".join(
